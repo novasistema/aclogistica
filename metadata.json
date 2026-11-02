@@ -1,0 +1,6 @@
+{
+  "name": "Adrian C Logística Integral",
+  "description": "Sistema completo de transporte y logística: hojas de ruta, seguimiento de móviles y entregas en tiempo real, mantenimiento de flota, remitos digitales con firma táctil y rastreo público.",
+  "requestFramePermissions": ["geolocation", "notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

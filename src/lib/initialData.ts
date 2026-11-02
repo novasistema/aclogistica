@@ -1,0 +1,634 @@
+import { Vehicle, Driver, RouteSheet, PackageRemito, MaintenanceRecord, PushNotification } from '../types';
+
+export const INITIAL_VEHICLES: Vehicle[] = [
+  {
+    id: 'veh-01',
+    plate: 'AF 892 CD',
+    brandModel: 'Mercedes-Benz Atego 1726',
+    type: 'Camión Chasis',
+    capacityKg: 10000,
+    capacityM3: 45,
+    odometerKm: 142350,
+    status: 'En Ruta',
+    assignedDriverId: 'drv-01',
+    assignedDriverName: 'Adrian C. (Director)',
+    vtvExpiration: '2026-11-20',
+    insuranceExpiration: '2027-04-15',
+    currentLat: -32.9468,
+    currentLng: -60.6393,
+    currentSpeed: 78,
+    heading: 145,
+    lastLocationUpdate: 'Hace 3 minutos (RN 9 km 298)',
+    notes: 'Unidad equipada con furgón térmico y seguimiento satelital dual.'
+  },
+  {
+    id: 'veh-02',
+    plate: 'AE 415 TY',
+    brandModel: 'Scania R450 Streamline',
+    type: 'Semirremolque',
+    capacityKg: 28000,
+    capacityM3: 90,
+    odometerKm: 289400,
+    status: 'En Ruta',
+    assignedDriverId: 'drv-03',
+    assignedDriverName: 'Marcelo Gutierrez',
+    vtvExpiration: '2027-01-10',
+    insuranceExpiration: '2027-06-30',
+    currentLat: -31.4201,
+    currentLng: -64.1888,
+    currentSpeed: 82,
+    heading: 210,
+    lastLocationUpdate: 'Hace 1 minuto (Circunvalación Córdoba)',
+    notes: 'Cargas pesadas e interprovinciales. Batea y lona engomada.'
+  },
+  {
+    id: 'veh-03',
+    plate: 'AD 732 KL',
+    brandModel: 'Iveco Daily 70C17',
+    type: 'Furgón Utilitario',
+    capacityKg: 4200,
+    capacityM3: 20,
+    odometerKm: 98200,
+    status: 'En Ruta',
+    assignedDriverId: 'drv-02',
+    assignedDriverName: 'Carlos Mendez',
+    vtvExpiration: '2026-12-05',
+    insuranceExpiration: '2027-02-18',
+    currentLat: -34.6037,
+    currentLng: -58.3816,
+    currentSpeed: 38,
+    heading: 90,
+    lastLocationUpdate: 'Hace 5 minutos (Acceso Norte / Panamericana)',
+    notes: 'Distribución capilar urbana y paquetería express.'
+  },
+  {
+    id: 'veh-04',
+    plate: 'AC 618 QW',
+    brandModel: 'Toyota Hilux Cargo 2.8',
+    type: 'Camioneta',
+    capacityKg: 1200,
+    capacityM3: 6,
+    odometerKm: 65120,
+    status: 'Disponible',
+    assignedDriverId: 'drv-04',
+    assignedDriverName: 'Lucia Fernandez',
+    vtvExpiration: '2027-03-25',
+    insuranceExpiration: '2027-08-10',
+    currentLat: -32.9515,
+    currentLng: -60.6667,
+    currentSpeed: 0,
+    heading: 0,
+    lastLocationUpdate: 'Estacionado en Base Central Rosario',
+    notes: 'Vehículo para envíos urgentes, muestras y trámites especiales.'
+  },
+  {
+    id: 'veh-05',
+    plate: 'AB 903 ZX',
+    brandModel: 'Ford Cargo 1722',
+    type: 'Camión Chasis',
+    capacityKg: 11000,
+    capacityM3: 48,
+    odometerKm: 210450,
+    status: 'En Mantenimiento',
+    assignedDriverId: undefined,
+    assignedDriverName: undefined,
+    vtvExpiration: '2026-11-15',
+    insuranceExpiration: '2027-05-12',
+    currentLat: -32.9600,
+    currentLng: -60.6800,
+    currentSpeed: 0,
+    heading: 0,
+    lastLocationUpdate: 'En Taller Mecánico Especializado Diesel Centro',
+    notes: 'Service programado de frenos, campanas y cambio de inyectores.'
+  }
+];
+
+export const INITIAL_DRIVERS: Driver[] = [
+  {
+    id: 'drv-01',
+    fullName: 'Adrian C.',
+    dni: '29.845.102',
+    phone: '+54 9 341 582-9901',
+    email: 'adrian@logistica-integral.com',
+    licenseCategory: 'E1 - Cargas Generales y Sustancias Peligrosas',
+    licenseExpiration: '2028-09-14',
+    status: 'En Viaje',
+    currentVehicleId: 'veh-01',
+    rating: 5.0,
+    totalDeliveries: 1420,
+    emergencyContact: 'Silvia Rossi (Esposa) - +54 9 341 411-2233',
+    password: 'adrian2026',
+    pin: '1234'
+  },
+  {
+    id: 'drv-02',
+    fullName: 'Carlos Mendez',
+    dni: '33.190.412',
+    phone: '+54 9 11 6721-4450',
+    email: 'carlos.mendez@logistica-integral.com',
+    licenseCategory: 'C1 - Camiones sin acoplado',
+    licenseExpiration: '2027-11-04',
+    status: 'En Viaje',
+    currentVehicleId: 'veh-03',
+    rating: 4.85,
+    totalDeliveries: 890,
+    emergencyContact: 'Marta Fernandez - +54 9 11 3456-7890',
+    password: 'carlos2026',
+    pin: '2233'
+  },
+  {
+    id: 'drv-03',
+    fullName: 'Marcelo Gutierrez',
+    dni: '27.450.881',
+    phone: '+54 9 351 498-7712',
+    email: 'm.gutierrez@logistica-integral.com',
+    licenseCategory: 'E1 - Semirremolques e Interprovincial',
+    licenseExpiration: '2027-06-20',
+    status: 'En Viaje',
+    currentVehicleId: 'veh-02',
+    rating: 4.92,
+    totalDeliveries: 1250,
+    emergencyContact: 'Laura Gutierrez - +54 9 351 888-2121',
+    password: 'marcelo2026',
+    pin: '4455'
+  },
+  {
+    id: 'drv-04',
+    fullName: 'Lucia Fernandez',
+    dni: '36.782.903',
+    phone: '+54 9 341 622-3344',
+    email: 'lucia.f@logistica-integral.com',
+    licenseCategory: 'B2 / C1 - Transporte Utilitarios y Cargas',
+    licenseExpiration: '2028-01-30',
+    status: 'Disponible',
+    currentVehicleId: 'veh-04',
+    rating: 4.98,
+    totalDeliveries: 460,
+    emergencyContact: 'Esteban Fernandez - +54 9 341 999-0011',
+    password: 'lucia2026',
+    pin: '7788'
+  },
+  {
+    id: 'drv-05',
+    fullName: 'Roberto Benitez',
+    dni: '25.612.339',
+    phone: '+54 9 342 511-9876',
+    email: 'r.benitez@logistica-integral.com',
+    licenseCategory: 'E1 - Cargas Generales',
+    licenseExpiration: '2027-08-15',
+    status: 'Descanso',
+    currentVehicleId: undefined,
+    rating: 4.8,
+    totalDeliveries: 980,
+    emergencyContact: 'Andrea Benitez - +54 9 342 666-3322',
+    password: 'roberto2026',
+    pin: '9900'
+  }
+];
+
+export const INITIAL_PACKAGES: PackageRemito[] = [
+  {
+    id: 'pkg-01',
+    trackingNumber: 'AC-8941',
+    remitoNumber: 'R-0001-00045812',
+    routeId: 'rt-01',
+    routeNumber: 'HR-2026-0412',
+    senderName: 'Metalúrgica Centro SA',
+    senderDniCuit: '30-71029481-9',
+    senderAddress: 'Av. Circunvalación 4500',
+    senderCity: 'Rosario, Santa Fe',
+    senderPhone: '+54 341 490-1122',
+    recipientName: 'Agro Industrial Córdoba SRL',
+    recipientDniCuit: '30-68421098-4',
+    recipientAddress: 'Ruta 9 Km 680 - Parque Industrial',
+    recipientCity: 'Córdoba Capital',
+    recipientPhone: '+54 351 590-3344',
+    recipientEmail: 'compras@agroindustrialcba.com.ar',
+    packagesCount: 4,
+    weightKg: 850,
+    declaredValue: 2450000,
+    description: 'Ejes rectificados, engranajes cónicos y rodamientos de precisión',
+    status: 'En Tránsito',
+    currentLat: -32.4112,
+    currentLng: -62.2415,
+    eta: 'Hoy 16:30 hs',
+    history: [
+      {
+        status: 'Recibido en Depósito',
+        timestamp: '2026-11-02 08:15 hs',
+        location: 'Depósito Central Rosario (San Martín 4500)',
+        notes: 'Mercadería embalada y paletizada. Remito verificado conforme.'
+      },
+      {
+        status: 'Asignado a Hoja de Ruta',
+        timestamp: '2026-11-02 09:30 hs',
+        location: 'Base de Despacho Rosario',
+        notes: 'Cargado en Camión Mercedes-Benz (AF 892 CD) - Hoja de Ruta HR-2026-0412.'
+      },
+      {
+        status: 'En Tránsito',
+        timestamp: '2026-11-02 11:00 hs',
+        location: 'RN 9 Km 320 - Tramo Rosario / Villa María',
+        notes: 'Unidad en trayecto troncal con velocidad controlada y monitoreo activo.'
+      }
+    ]
+  },
+  {
+    id: 'pkg-02',
+    trackingNumber: 'AC-9042',
+    remitoNumber: 'R-0001-00045813',
+    routeId: 'rt-02',
+    routeNumber: 'HR-2026-0413',
+    senderName: 'Distribuidora Farmacéutica del Litoral',
+    senderDniCuit: '30-65982143-2',
+    senderAddress: 'Bv. Oroño 2800',
+    senderCity: 'Rosario, Santa Fe',
+    senderPhone: '+54 341 422-9090',
+    recipientName: 'Farmacias Del Sol (Sucursal Norte)',
+    recipientDniCuit: '27-31298450-3',
+    recipientAddress: 'Av. Alberdi 850',
+    recipientCity: 'Rosario Norte',
+    recipientPhone: '+54 341 455-1212',
+    recipientEmail: 'pedidos@farmaciasdelsol.com',
+    packagesCount: 8,
+    weightKg: 120,
+    declaredValue: 890000,
+    description: 'Insumos hospitalarios descartables y medicamentos en cadena de frío',
+    status: 'En Reparto / Zona',
+    currentLat: -32.9210,
+    currentLng: -60.6850,
+    eta: 'Próxima parada (15 min)',
+    history: [
+      {
+        status: 'Recibido en Depósito',
+        timestamp: '2026-11-02 07:45 hs',
+        location: 'Depósito Central Rosario',
+        notes: 'Control de precintos térmicos y pesaje digital.'
+      },
+      {
+        status: 'Asignado a Hoja de Ruta',
+        timestamp: '2026-11-02 08:30 hs',
+        location: 'Base Operativa',
+        notes: 'Asignado a furgón Iveco Daily (AD 732 KL).'
+      },
+      {
+        status: 'En Reparto / Zona',
+        timestamp: '2026-11-02 11:20 hs',
+        location: 'Zona Arroyito / Alberdi',
+        notes: 'Chofer Carlos Mendez en zona de entrega. Cliente notificado vía push.'
+      }
+    ]
+  },
+  {
+    id: 'pkg-03',
+    trackingNumber: 'AC-7719',
+    remitoNumber: 'R-0001-00045799',
+    routeId: 'rt-03',
+    routeNumber: 'HR-2026-0410',
+    senderName: 'Calzados y Cuero del Plata',
+    senderDniCuit: '30-70891244-6',
+    senderAddress: 'Av. Corrientes 1400',
+    senderCity: 'CABA, Buenos Aires',
+    senderPhone: '+54 11 4371-8899',
+    recipientName: 'Boutique Urbana Cuyo',
+    recipientDniCuit: '20-32415892-1',
+    recipientAddress: 'San Martín 1250 Local 4',
+    recipientCity: 'Mendoza Capital',
+    recipientPhone: '+54 261 429-1144',
+    recipientEmail: 'gerencia@boutiqueurbanacuyo.com',
+    packagesCount: 6,
+    weightKg: 95,
+    declaredValue: 1200000,
+    description: 'Calzado artesanal en cuero legítimo de temporada',
+    status: 'Entregado',
+    currentLat: -32.8895,
+    currentLng: -68.8458,
+    eta: 'Entregado conforme',
+    deliveredToName: 'Juan Carlos Pérez',
+    deliveredToDni: '32.415.892',
+    deliveredAt: '2026-11-01 17:42 hs',
+    deliveryNotes: 'Recepción en depósito comercial. Firma digital y DNI capturados conforme.',
+    deliverySignature: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="120" viewBox="0 0 300 120"><path d="M 20 80 Q 60 10 90 70 T 150 50 Q 180 80 220 30 T 270 70 M 50 95 L 240 90" stroke="%231e3a8a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+    history: [
+      {
+        status: 'Recibido en Depósito',
+        timestamp: '2026-10-31 09:00 hs',
+        location: 'Depósito Central CABA',
+        notes: 'Ingreso al sistema con código de barras generado.'
+      },
+      {
+        status: 'En Tránsito',
+        timestamp: '2026-10-31 20:00 hs',
+        location: 'Ruta Nacional 7',
+        notes: 'Troncal CABA - San Luis - Mendoza.'
+      },
+      {
+        status: 'En Reparto / Zona',
+        timestamp: '2026-11-01 15:10 hs',
+        location: 'Centro Mendoza',
+        notes: 'Móvil en recorrido final de entrega.'
+      },
+      {
+        status: 'Entregado',
+        timestamp: '2026-11-01 17:42 hs',
+        location: 'San Martín 1250, Mendoza Capital',
+        notes: 'Entregado con firma digital validada a Juan Carlos Pérez (DNI 32.415.892).'
+      }
+    ]
+  },
+  {
+    id: 'pkg-04',
+    trackingNumber: 'AC-9510',
+    remitoNumber: 'R-0001-00045820',
+    senderName: 'Tecnología Austral Import',
+    senderDniCuit: '30-71649201-8',
+    senderAddress: 'Parque Tecnológico Litoral',
+    senderCity: 'Santa Fe Capital',
+    senderPhone: '+54 342 459-0022',
+    recipientName: 'Estudio Jurídico & Contable Mendoza',
+    recipientDniCuit: '27-29841203-7',
+    recipientAddress: 'Mitre 550 Piso 8',
+    recipientCity: 'Mendoza Capital',
+    recipientPhone: '+54 261 423-9911',
+    recipientEmail: 'administracion@estudiomendoza.com',
+    packagesCount: 2,
+    weightKg: 25,
+    declaredValue: 650000,
+    description: 'Servidores de respaldo compacto y equipamiento de red blindado',
+    status: 'Recibido en Depósito',
+    currentLat: -31.6333,
+    currentLng: -60.7000,
+    eta: 'Programado para próximo despacho',
+    history: [
+      {
+        status: 'Recibido en Depósito',
+        timestamp: '2026-11-02 10:15 hs',
+        location: 'Depósito Nodo Santa Fe',
+        notes: 'Mercadería clasificada en estantería E-4 para consolidación.'
+      }
+    ]
+  },
+  {
+    id: 'pkg-05',
+    trackingNumber: 'AC-9800',
+    remitoNumber: 'R-0001-00045825',
+    routeId: 'rt-01',
+    routeNumber: 'HR-2026-0412',
+    senderName: 'Agroinsumos Pampeana',
+    senderDniCuit: '30-62189045-1',
+    senderAddress: 'Ruta 33 Km 12',
+    senderCity: 'Venado Tuerto, Santa Fe',
+    senderPhone: '+54 3462 43-8800',
+    recipientName: 'Cooperativa Agrícola Ganadera de Villa María',
+    recipientDniCuit: '30-54129840-0',
+    recipientAddress: 'Av. del Trabajo 1200',
+    recipientCity: 'Villa María, Córdoba',
+    recipientPhone: '+54 353 453-2211',
+    recipientEmail: 'logistica@coopvillamaria.com.ar',
+    packagesCount: 15,
+    weightKg: 1450,
+    declaredValue: 3800000,
+    description: 'Bolsas de semillas seleccionadas y bioestimulantes foliares',
+    status: 'Asignado a Hoja de Ruta',
+    currentLat: -32.4112,
+    currentLng: -62.2415,
+    eta: 'Hoy 14:45 hs',
+    history: [
+      {
+        status: 'Recibido en Depósito',
+        timestamp: '2026-11-02 08:30 hs',
+        location: 'Base Logística Rosario',
+        notes: 'Carga certificada con control fitosanitario.'
+      },
+      {
+        status: 'Asignado a Hoja de Ruta',
+        timestamp: '2026-11-02 09:30 hs',
+        location: 'Andén 3',
+        notes: 'Asignado a Hoja de Ruta HR-2026-0412.'
+      }
+    ]
+  }
+];
+
+export const INITIAL_ROUTES: RouteSheet[] = [
+  {
+    id: 'rt-01',
+    routeNumber: 'HR-2026-0412',
+    title: 'Troncal Rosario - Villa María - Córdoba Express',
+    date: '2026-11-02',
+    vehicleId: 'veh-01',
+    vehiclePlate: 'AF 892 CD',
+    driverId: 'drv-01',
+    driverName: 'Adrian C. (Director)',
+    status: 'En Tránsito',
+    originCity: 'Rosario, Santa Fe',
+    destinationCity: 'Córdoba Capital',
+    totalPackages: 19,
+    deliveredPackages: 0,
+    totalWeightKg: 2300,
+    totalVolumeM3: 16.5,
+    departureTime: '09:45 hs',
+    estimatedArrivalTime: '17:30 hs',
+    notes: 'Viaje troncal directo por Autopista Rosario - Córdoba. Parada intermedia en Villa María.',
+    stops: [
+      {
+        id: 'stop-01-1',
+        sequence: 1,
+        city: 'Villa María',
+        address: 'Av. del Trabajo 1200',
+        recipientName: 'Cooperativa Agrícola Ganadera',
+        packageId: 'pkg-05',
+        trackingNumber: 'AC-9800',
+        status: 'En Camino',
+        lat: -32.4100,
+        lng: -63.2400
+      },
+      {
+        id: 'stop-01-2',
+        sequence: 2,
+        city: 'Córdoba Capital',
+        address: 'Ruta 9 Km 680 - Parque Industrial',
+        recipientName: 'Agro Industrial Córdoba SRL',
+        packageId: 'pkg-01',
+        trackingNumber: 'AC-8941',
+        status: 'Pendiente',
+        lat: -31.4201,
+        lng: -64.1888
+      }
+    ]
+  },
+  {
+    id: 'rt-02',
+    routeNumber: 'HR-2026-0413',
+    title: 'Circuito Reparto Urbano Gran Rosario & Cordón Industrial',
+    date: '2026-11-02',
+    vehicleId: 'veh-03',
+    vehiclePlate: 'AD 732 KL',
+    driverId: 'drv-02',
+    driverName: 'Carlos Mendez',
+    status: 'En Tránsito',
+    originCity: 'Rosario Centro',
+    destinationCity: 'Gran Rosario / San Lorenzo',
+    totalPackages: 14,
+    deliveredPackages: 6,
+    totalWeightKg: 980,
+    totalVolumeM3: 8.2,
+    departureTime: '08:30 hs',
+    estimatedArrivalTime: '15:00 hs',
+    notes: 'Repartos prioritarios puerta a puerta y farmacias.',
+    stops: [
+      {
+        id: 'stop-02-1',
+        sequence: 1,
+        city: 'Rosario Norte',
+        address: 'Av. Alberdi 850',
+        recipientName: 'Farmacias Del Sol',
+        packageId: 'pkg-02',
+        trackingNumber: 'AC-9042',
+        status: 'En Camino',
+        lat: -32.9210,
+        lng: -60.6850
+      }
+    ]
+  },
+  {
+    id: 'rt-03',
+    routeNumber: 'HR-2026-0410',
+    title: 'Corredor Cuyo: CABA - San Luis - Mendoza',
+    date: '2026-10-31',
+    vehicleId: 'veh-02',
+    vehiclePlate: 'AE 415 TY',
+    driverId: 'drv-03',
+    driverName: 'Marcelo Gutierrez',
+    status: 'Completada',
+    originCity: 'CABA, Buenos Aires',
+    destinationCity: 'Mendoza Capital',
+    totalPackages: 38,
+    deliveredPackages: 38,
+    totalWeightKg: 18400,
+    totalVolumeM3: 65,
+    departureTime: '20:00 hs',
+    estimatedArrivalTime: '18:00 hs',
+    actualArrivalTime: '17:42 hs',
+    notes: 'Viaje culminado con éxito. Todas las firmas digitales recolectadas y archivadas.',
+    stops: [
+      {
+        id: 'stop-03-1',
+        sequence: 1,
+        city: 'Mendoza Capital',
+        address: 'San Martín 1250 Local 4',
+        recipientName: 'Boutique Urbana Cuyo',
+        packageId: 'pkg-03',
+        trackingNumber: 'AC-7719',
+        status: 'Entregado',
+        lat: -32.8895,
+        lng: -68.8458
+      }
+    ]
+  }
+];
+
+export const INITIAL_MAINTENANCE: MaintenanceRecord[] = [
+  {
+    id: 'maint-01',
+    vehicleId: 'veh-05',
+    vehiclePlate: 'AB 903 ZX',
+    type: 'Correctivo',
+    description: 'Reparación integral de circuito de frenos de aire y reemplazo de pastillas/campanas',
+    scheduledDate: '2026-11-01',
+    completedDate: undefined,
+    odometerKm: 210450,
+    nextDueKm: 235000,
+    cost: 485000,
+    workshopName: 'Taller Mecánico Especializado Diesel Centro',
+    status: 'En Taller',
+    invoicesNotes: 'Presupuesto #8910 aprobado. Entrega estimada en 48 hs hábiles.'
+  },
+  {
+    id: 'maint-02',
+    vehicleId: 'veh-01',
+    vehiclePlate: 'AF 892 CD',
+    type: 'Preventivo',
+    description: 'Service periódico de los 150.000 km (Aceite sintético 15W40, filtro de aceite, gasoil y trampa de agua)',
+    scheduledDate: '2026-11-18',
+    completedDate: undefined,
+    odometerKm: 142350,
+    nextDueKm: 150000,
+    cost: 320000,
+    workshopName: 'Concesionario Oficial Mercedes-Benz Alra',
+    status: 'Programado',
+    invoicesNotes: 'Turno reservado para el 18 de Noviembre 08:30 hs.'
+  },
+  {
+    id: 'maint-03',
+    vehicleId: 'veh-02',
+    vehiclePlate: 'AE 415 TY',
+    type: 'Cambio Neumáticos',
+    description: 'Rotación y alineación computarizada del tren tractor y cambio de 4 cubiertas recapadas',
+    scheduledDate: '2026-10-20',
+    completedDate: '2026-10-21',
+    odometerKm: 285000,
+    nextDueKm: 335000,
+    cost: 1650000,
+    workshopName: 'Gomería Integral del Transporte San Cristóbal',
+    status: 'Completado',
+    invoicesNotes: 'Factura A-0004-0019284 abonada con transferencia.'
+  },
+  {
+    id: 'maint-04',
+    vehicleId: 'veh-03',
+    vehiclePlate: 'AD 732 KL',
+    type: 'Inspección Reglamentaria',
+    description: 'Renovación técnica obligatoria VTV y verificación de matafuegos/luces reglamentarias',
+    scheduledDate: '2026-11-28',
+    completedDate: undefined,
+    odometerKm: 98200,
+    nextDueKm: 110000,
+    cost: 85000,
+    workshopName: 'Planta VTV Rosario Sur',
+    status: 'Programado',
+    invoicesNotes: 'Vencimiento de oblea actual el 05 de Diciembre 2026.'
+  }
+];
+
+export const INITIAL_NOTIFICATIONS: PushNotification[] = [
+  {
+    id: 'notif-01',
+    trackingNumber: 'AC-8941',
+    title: '🚚 Tu envío #AC-8941 está en viaje',
+    message: 'El camión Mercedes-Benz (AF 892 CD) conducido por Adrian C. avanzó hacia Córdoba Capital. ETA: Hoy 16:30 hs.',
+    type: 'estado_envio',
+    timestamp: 'Hace 15 min',
+    read: false,
+    channel: 'Push Web'
+  },
+  {
+    id: 'notif-02',
+    trackingNumber: 'AC-9042',
+    title: '📍 Móvil en tu zona de entrega',
+    message: 'El furgón Iveco Daily conducido por Carlos Mendez está a 15 minutos de Farmacias Del Sol.',
+    type: 'proximo_a_entrega',
+    timestamp: 'Hace 30 min',
+    read: false,
+    channel: 'WhatsApp Link'
+  },
+  {
+    id: 'notif-03',
+    trackingNumber: 'AC-7719',
+    title: '✅ Entrega concretada y firmada',
+    message: 'El envío #AC-7719 fue entregado conforme a Juan Carlos Pérez (DNI 32.415.892) con firma digital validada.',
+    type: 'entregado',
+    timestamp: 'Ayer 17:42 hs',
+    read: true,
+    channel: 'In-App'
+  },
+  {
+    id: 'notif-04',
+    title: '⚠️ Alerta de Mantenimiento Flota',
+    message: 'La unidad AB 903 ZX se encuentra en taller para servicio de frenos. VTV de la unidad AF 892 CD vence en 18 días.',
+    type: 'mantenimiento_alerta',
+    timestamp: 'Hoy 08:00 hs',
+    read: true,
+    channel: 'In-App'
+  }
+];

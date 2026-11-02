@@ -1,0 +1,176 @@
+{
+  "entities": {
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Móviles y vehículos de la flota de transporte",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "plate": { "type": "string", "maxLength": 30 },
+        "brandModel": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string", "maxLength": 50 },
+        "capacityKg": { "type": "number" },
+        "capacityM3": { "type": "number" },
+        "odometerKm": { "type": "number" },
+        "status": { "type": "string", "maxLength": 40 },
+        "assignedDriverId": { "type": "string", "maxLength": 128 },
+        "assignedDriverName": { "type": "string", "maxLength": 100 },
+        "vtvExpiration": { "type": "string", "maxLength": 40 },
+        "insuranceExpiration": { "type": "string", "maxLength": 40 },
+        "currentLat": { "type": "number" },
+        "currentLng": { "type": "number" },
+        "currentSpeed": { "type": "number" },
+        "heading": { "type": "number" },
+        "lastLocationUpdate": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "plate", "brandModel", "type", "capacityKg", "status", "odometerKm"]
+    },
+    "Driver": {
+      "title": "Driver",
+      "description": "Conductores de la empresa",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "fullName": { "type": "string", "maxLength": 100 },
+        "dni": { "type": "string", "maxLength": 30 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 100 },
+        "licenseCategory": { "type": "string", "maxLength": 50 },
+        "licenseExpiration": { "type": "string", "maxLength": 40 },
+        "status": { "type": "string", "maxLength": 30 },
+        "currentVehicleId": { "type": "string", "maxLength": 128 },
+        "rating": { "type": "number" },
+        "totalDeliveries": { "type": "number" },
+        "emergencyContact": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "fullName", "dni", "phone", "licenseCategory", "status"]
+    },
+    "Route": {
+      "title": "Route",
+      "description": "Hojas de ruta de viajes y distribución",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "routeNumber": { "type": "string", "maxLength": 50 },
+        "title": { "type": "string", "maxLength": 150 },
+        "date": { "type": "string", "maxLength": 40 },
+        "vehicleId": { "type": "string", "maxLength": 128 },
+        "vehiclePlate": { "type": "string", "maxLength": 30 },
+        "driverId": { "type": "string", "maxLength": 128 },
+        "driverName": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "maxLength": 40 },
+        "originCity": { "type": "string", "maxLength": 80 },
+        "destinationCity": { "type": "string", "maxLength": 80 },
+        "totalPackages": { "type": "number" },
+        "deliveredPackages": { "type": "number" },
+        "totalWeightKg": { "type": "number" },
+        "totalVolumeM3": { "type": "number" },
+        "departureTime": { "type": "string", "maxLength": 40 },
+        "estimatedArrivalTime": { "type": "string", "maxLength": 40 },
+        "actualArrivalTime": { "type": "string", "maxLength": 40 },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "routeNumber", "title", "date", "status", "originCity", "destinationCity"]
+    },
+    "Package": {
+      "title": "Package",
+      "description": "Encomiendas y remitos con código de tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "trackingNumber": { "type": "string", "maxLength": 50 },
+        "remitoNumber": { "type": "string", "maxLength": 50 },
+        "routeId": { "type": "string", "maxLength": 128 },
+        "senderName": { "type": "string", "maxLength": 100 },
+        "senderDniCuit": { "type": "string", "maxLength": 40 },
+        "senderAddress": { "type": "string", "maxLength": 150 },
+        "senderCity": { "type": "string", "maxLength": 80 },
+        "senderPhone": { "type": "string", "maxLength": 40 },
+        "recipientName": { "type": "string", "maxLength": 100 },
+        "recipientDniCuit": { "type": "string", "maxLength": 40 },
+        "recipientAddress": { "type": "string", "maxLength": 150 },
+        "recipientCity": { "type": "string", "maxLength": 80 },
+        "recipientPhone": { "type": "string", "maxLength": 40 },
+        "recipientEmail": { "type": "string", "maxLength": 100 },
+        "packagesCount": { "type": "number" },
+        "weightKg": { "type": "number" },
+        "declaredValue": { "type": "number" },
+        "description": { "type": "string", "maxLength": 300 },
+        "status": { "type": "string", "maxLength": 50 },
+        "currentLat": { "type": "number" },
+        "currentLng": { "type": "number" },
+        "eta": { "type": "string", "maxLength": 60 },
+        "deliverySignature": { "type": "string", "maxLength": 50000 },
+        "deliveredToName": { "type": "string", "maxLength": 100 },
+        "deliveredToDni": { "type": "string", "maxLength": 40 },
+        "deliveredAt": { "type": "string", "maxLength": 50 },
+        "deliveryNotes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "trackingNumber", "remitoNumber", "senderName", "recipientName", "recipientAddress", "recipientCity", "status"]
+    },
+    "Maintenance": {
+      "title": "Maintenance",
+      "description": "Registros de mantenimiento preventivo y correctivo de la flota",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "vehicleId": { "type": "string", "maxLength": 128 },
+        "vehiclePlate": { "type": "string", "maxLength": 30 },
+        "type": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 250 },
+        "scheduledDate": { "type": "string", "maxLength": 40 },
+        "completedDate": { "type": "string", "maxLength": 40 },
+        "odometerKm": { "type": "number" },
+        "nextDueKm": { "type": "number" },
+        "cost": { "type": "number" },
+        "workshopName": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "maxLength": 40 },
+        "invoicesNotes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "vehicleId", "type", "description", "scheduledDate", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Alertas y notificaciones push de envíos y flota",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "trackingNumber": { "type": "string", "maxLength": 50 },
+        "title": { "type": "string", "maxLength": 100 },
+        "message": { "type": "string", "maxLength": 300 },
+        "type": { "type": "string", "maxLength": 50 },
+        "timestamp": { "type": "string", "maxLength": 50 },
+        "read": { "type": "boolean" },
+        "channel": { "type": "string", "maxLength": 40 }
+      },
+      "required": ["id", "title", "message", "timestamp", "read"]
+    }
+  },
+  "firestore": {
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Colección de móviles y camiones de transporte"
+    },
+    "/drivers/{driverId}": {
+      "schema": "Driver",
+      "description": "Colección de conductores registrados"
+    },
+    "/routes/{routeId}": {
+      "schema": "Route",
+      "description": "Colección de hojas de ruta de distribución"
+    },
+    "/packages/{packageId}": {
+      "schema": "Package",
+      "description": "Colección de encomiendas y remitos con tracking"
+    },
+    "/maintenance/{maintenanceId}": {
+      "schema": "Maintenance",
+      "description": "Historial y agenda de servicios de flota"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Registro de notificaciones push y alertas a clientes"
+    }
+  }
+}
