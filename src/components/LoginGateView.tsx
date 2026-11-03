@@ -14,15 +14,33 @@ import {
   Lock,
   ChevronRight,
   AlertCircle,
-  Trash2
+  Trash2,
+  ShieldAlert,
+  Building2,
+  PackagePlus,
 } from 'lucide-react';
 import { ResetSystemConfirmModal } from './ResetSystemConfirmModal';
+import { DriverReportModal } from './DriverReportModal';
+import { ProviderRegisterModal } from './ProviderRegisterModal';
 
 export const LoginGateView: React.FC = () => {
-  const { drivers, routes, packages, loginAsAdmin, loginAsDriver, setUserRole, setCurrentTab, triggerSound } = useLogistics();
+  const {
+    drivers,
+    providers,
+    routes,
+    packages,
+    loginAsAdmin,
+    loginAsDriver,
+    loginAsProvider,
+    setUserRole,
+    setCurrentTab,
+    triggerSound,
+  } = useLogistics();
 
-  const [activePortal, setActivePortal] = useState<'admin' | 'driver' | null>(null);
+  const [activePortal, setActivePortal] = useState<'admin' | 'driver' | 'provider' | null>(null);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showDriverReportModal, setShowDriverReportModal] = useState(false);
+  const [showProviderRegisterModal, setShowProviderRegisterModal] = useState(false);
 
   // Admin form
   const [adminPassword, setAdminPassword] = useState('');
@@ -34,6 +52,12 @@ export const LoginGateView: React.FC = () => {
   const [driverPassword, setDriverPassword] = useState('');
   const [showDriverPass, setShowDriverPass] = useState(false);
   const [driverError, setDriverError] = useState('');
+
+  // Provider form
+  const [providerUser, setProviderUser] = useState('litoral');
+  const [providerPassword, setProviderPassword] = useState('');
+  const [showProviderPass, setShowProviderPass] = useState(false);
+  const [providerError, setProviderError] = useState('');
 
   // Quick Tracking code input from login gate
   const [trackingInput, setTrackingInput] = useState('');
@@ -58,6 +82,16 @@ export const LoginGateView: React.FC = () => {
     }
   };
 
+  const handleProviderSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setProviderError('');
+    const res = loginAsProvider(providerUser, providerPassword);
+    if (!res.success) {
+      setProviderError(res.message || 'Credenciales de proveedor incorrectas');
+      triggerSound();
+    }
+  };
+
   const handleQuickTracking = (e: React.FormEvent) => {
     e.preventDefault();
     setUserRole('public');
@@ -78,7 +112,7 @@ export const LoginGateView: React.FC = () => {
           <div className="inline-flex p-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl shadow-sky-950/40">
             <img
               src="/assets/aistudio/image_d9acb0e9.png"
-              alt="Adrian C Logística Integral"
+              alt="A C Logística Integral"
               className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl"
               onError={e => {
                 (e.target as HTMLElement).style.display = 'none';
@@ -88,51 +122,84 @@ export const LoginGateView: React.FC = () => {
 
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Adrian C Logística Integral
+              A C Logística Integral
             </h1>
             <p className="text-xs sm:text-sm text-sky-400 font-semibold uppercase tracking-wider mt-0.5">
-              A C Logística Integral · Viajes y Transporte
+              Viajes y Transporte
             </p>
             <p className="text-xs text-slate-400 mt-2 max-w-md mx-auto">
-              Bienvenido al sistema integral de transporte. Selecciona tu perfil de ingreso para acceder:
+              Bienvenido al sistema integral de transporte. Selecciona tu perfil de ingreso o utiliza los servicios públicos:
             </p>
           </div>
         </div>
 
-        {/* Portal Selection Cards if none selected or segmented buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* ¿CÓMO MANEJO? - Control y Reporte Ciudadano de Vehículos / Choferes */}
+        <div className="bg-gradient-to-r from-amber-950/40 via-slate-900 to-amber-950/30 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3.5 text-center sm:text-left">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h3 className="font-bold text-white text-base">
+                  ¿Cómo manejo? Reporte y Control de Choferes
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black uppercase">
+                  Público
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5 max-w-md">
+                Ingresa la patente o número de móvil para notificar infracciones, excesos de velocidad o felicitaciones viales.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowDriverReportModal(true)}
+            className="w-full sm:w-auto px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-lg shadow-amber-500/20 shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            <span>Ingresar Patente / Reportar</span>
+          </button>
+        </div>
+
+        {/* Portal Selection Cards (3 Columns: Admin, Chofer, Proveedor) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Card 1: Administrador */}
           <div
             onClick={() => {
               setActivePortal('admin');
               setAdminError('');
             }}
-            className={`cursor-pointer rounded-2xl p-6 border transition-all duration-300 relative overflow-hidden group shadow-xl ${
+            className={`cursor-pointer rounded-2xl p-5 sm:p-6 border transition-all duration-300 relative overflow-hidden group shadow-xl flex flex-col justify-between ${
               activePortal === 'admin'
                 ? 'bg-slate-900 border-sky-500 ring-2 ring-sky-500/30'
                 : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
             }`}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-12 h-12 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Shield className="w-6 h-6" />
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="w-11 h-11 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  Panel Central
+                </span>
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                Panel Central
-              </span>
+
+              <div className="mt-3.5">
+                <h3 className="text-base font-bold text-white group-hover:text-sky-300 transition-colors">
+                  Administrador
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Flota, hojas de ruta, remitos, penalizaciones y mantenimiento.
+                </p>
+              </div>
             </div>
 
-            <div className="mt-4">
-              <h3 className="text-lg font-bold text-white group-hover:text-sky-300 transition-colors">
-                Entrar como Administrador
-              </h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Control de flota completa, hojas de ruta, emisión de remitos, asignaciones y gestión de mantenimiento.
-              </p>
-            </div>
-
-            <div className="mt-5 flex items-center gap-1.5 text-xs font-bold text-sky-400">
-              <span>{activePortal === 'admin' ? 'Formulario activo' : 'Ingresar con contraseña'}</span>
+            <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-sky-400">
+              <span>{activePortal === 'admin' ? 'Formulario activo' : 'Ingresar con clave'}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -143,32 +210,72 @@ export const LoginGateView: React.FC = () => {
               setActivePortal('driver');
               setDriverError('');
             }}
-            className={`cursor-pointer rounded-2xl p-6 border transition-all duration-300 relative overflow-hidden group shadow-xl ${
+            className={`cursor-pointer rounded-2xl p-5 sm:p-6 border transition-all duration-300 relative overflow-hidden group shadow-xl flex flex-col justify-between ${
               activePortal === 'driver'
                 ? 'bg-slate-900 border-emerald-500 ring-2 ring-emerald-500/30'
                 : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
             }`}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Truck className="w-6 h-6" />
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  Modo Chofer
+                </span>
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                Modo Móvil
-              </span>
+
+              <div className="mt-3.5">
+                <h3 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  Chofer / Conductor
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Hoja de ruta del día, paradas de entrega y firma digital táctil.
+                </p>
+              </div>
             </div>
 
-            <div className="mt-4">
-              <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
-                Entrar como Chofer
-              </h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                App móvil para conductores: hoja de ruta del día, llamadas, GPS y validación de entregas con firma digital.
-              </p>
+            <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+              <span>{activePortal === 'driver' ? 'Formulario activo' : 'Seleccionar chofer'}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 3: Proveedor */}
+          <div
+            onClick={() => {
+              setActivePortal('provider');
+              setProviderError('');
+            }}
+            className={`cursor-pointer rounded-2xl p-5 sm:p-6 border transition-all duration-300 relative overflow-hidden group shadow-xl flex flex-col justify-between ${
+              activePortal === 'provider'
+                ? 'bg-slate-900 border-indigo-500 ring-2 ring-indigo-500/30'
+                : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
+            }`}
+          >
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="w-11 h-11 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  Proveedores
+                </span>
+              </div>
+
+              <div className="mt-3.5">
+                <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
+                  Portal Proveedores
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Avisar retiro de mercadería con medidas (alto/ancho/profundo) y peso.
+                </p>
+              </div>
             </div>
 
-            <div className="mt-5 flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-              <span>{activePortal === 'driver' ? 'Formulario activo' : 'Seleccionar chofer y contraseña'}</span>
+            <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-indigo-400">
+              <span>{activePortal === 'provider' ? 'Formulario activo' : 'Ingresar / Registrarse'}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -421,6 +528,132 @@ export const LoginGateView: React.FC = () => {
           </div>
         )}
 
+        {/* Selected Authentication Form Area: PROVEEDOR */}
+        {activePortal === 'provider' && (
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 sm:p-7 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-base">Portal de Proveedores</h4>
+                  <p className="text-xs text-slate-400">Ingresa con tu usuario para avisar retiros de mercadería o regístrate</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActivePortal(null)}
+                className="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg"
+              >
+                Cambiar perfil
+              </button>
+            </div>
+
+            <form onSubmit={handleProviderSubmit} className="space-y-4 max-w-md mx-auto">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Usuario o Correo Electrónico *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    required
+                    value={providerUser}
+                    onChange={e => {
+                      setProviderUser(e.target.value);
+                      setProviderError('');
+                    }}
+                    placeholder="Ej. litoral o despacho@empresa.com"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Contraseña de Proveedor *
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type={showProviderPass ? 'text' : 'password'}
+                    required
+                    value={providerPassword}
+                    onChange={e => {
+                      setProviderPassword(e.target.value);
+                      setProviderError('');
+                    }}
+                    placeholder="Contraseña de acceso..."
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowProviderPass(!showProviderPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  >
+                    {showProviderPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {providerError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{providerError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Ingresar al Portal de Proveedores</span>
+              </button>
+
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center space-y-2">
+                <span className="text-xs text-slate-400 block">¿Tu empresa aún no está registrada?</span>
+                <button
+                  type="button"
+                  onClick={() => setShowProviderRegisterModal(true)}
+                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white border border-slate-700 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <PackagePlus className="w-3.5 h-3.5" />
+                  <span>Registrarse como Nuevo Proveedor</span>
+                </button>
+              </div>
+
+              {/* Quick credential chips for test providers */}
+              {providers.length > 0 && (
+                <div className="pt-1 text-center space-y-1.5">
+                  <span className="text-[11px] text-slate-400 block">
+                    Autocompletar proveedores de muestra:
+                  </span>
+                  <div className="flex flex-wrap justify-center gap-1.5">
+                    {providers.slice(0, 3).map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setProviderUser(p.username);
+                          setProviderPassword(p.password || 'proveedor123');
+                          setProviderError('');
+                        }}
+                        className="text-xs text-indigo-400 hover:text-indigo-300 font-mono bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800"
+                      >
+                        {p.username} ("{p.password || 'proveedor123'}")
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+        )}
+
         {/* Public Tracking Direct Gateway */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-3">
@@ -462,6 +695,18 @@ export const LoginGateView: React.FC = () => {
       <ResetSystemConfirmModal
         isOpen={showResetModal}
         onClose={() => setShowResetModal(false)}
+      />
+
+      {/* Driver Report Modal ("¿Cómo manejo?") */}
+      <DriverReportModal
+        isOpen={showDriverReportModal}
+        onClose={() => setShowDriverReportModal(false)}
+      />
+
+      {/* Provider Register Modal */}
+      <ProviderRegisterModal
+        isOpen={showProviderRegisterModal}
+        onClose={() => setShowProviderRegisterModal(false)}
       />
     </div>
   );

@@ -15,11 +15,14 @@ import {
   CheckCircle2,
   AlertTriangle,
   RotateCcw,
-  Trash2
+  Trash2,
+  Building2,
+  ShieldAlert
 } from 'lucide-react';
 
 import { LogOut, Shield } from 'lucide-react';
 import { ResetSystemConfirmModal } from './ResetSystemConfirmModal';
+import { DriverReportModal } from './DriverReportModal';
 
 export const NavigationHeader: React.FC = () => {
   const {
@@ -34,125 +37,157 @@ export const NavigationHeader: React.FC = () => {
     isOnline,
     userRole,
     authenticatedDriver,
+    activeProviderId,
+    providers,
     logout,
   } = useLogistics();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const adminNavItems = [
-    { id: 'dashboard', label: 'Panel Central', icon: Truck },
-    { id: 'fleet', label: 'Flota y Móviles', icon: Truck },
-    { id: 'routes', label: 'Hojas de Ruta', icon: FileSpreadsheet },
-    { id: 'packages', label: 'Encomiendas y Remitos', icon: Package },
-    { id: 'maintenance', label: 'Mantenimiento', icon: Wrench },
-    { id: 'drivers', label: 'Conductores', icon: Users },
+    { id: 'dashboard', label: 'Panel', fullLabel: 'Panel Central', icon: Truck },
+    { id: 'fleet', label: 'Flota', fullLabel: 'Flota y Móviles', icon: Truck },
+    { id: 'routes', label: 'Rutas', fullLabel: 'Hojas de Ruta', icon: FileSpreadsheet },
+    { id: 'packages', label: 'Remitos', fullLabel: 'Encomiendas y Remitos', icon: Package },
+    { id: 'providers', label: 'Proveedores', fullLabel: 'Proveedores', icon: Building2 },
+    { id: 'maintenance', label: 'Taller', fullLabel: 'Mantenimiento', icon: Wrench },
+    { id: 'drivers', label: 'Choferes', fullLabel: 'Conductores', icon: Users },
   ];
 
-  const navItems = userRole === 'driver' ? [{ id: 'driver-app', label: 'Mi Hoja de Ruta', icon: Smartphone }] : adminNavItems;
+  const currentProvider = providers.find(p => p.id === activeProviderId);
+
+  const navItems =
+    userRole === 'driver'
+      ? [{ id: 'driver-app', label: 'Mi Hoja de Ruta', fullLabel: 'Mi Hoja de Ruta', icon: Smartphone }]
+      : userRole === 'provider'
+      ? [{ id: 'providers', label: 'Portal Proveedor', fullLabel: 'Mi Portal de Proveedor', icon: Building2 }]
+      : adminNavItems;
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-8 h-16">
+    <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 w-full overflow-hidden">
+      <div className="w-full px-2 sm:px-4 lg:px-5 flex items-center justify-between gap-2 h-16 max-w-full">
         {/* Zone 1: Single element brand mark with official logo */}
         <div
           onClick={() => setCurrentTab('dashboard')}
-          className="flex items-center gap-3 cursor-pointer shrink-0 select-none group"
+          className="flex items-center gap-2.5 cursor-pointer shrink-0 select-none group"
         >
           <img
             src="/assets/aistudio/image_d9acb0e9.png"
-            alt="Adrian C Logística Integral"
-            className="w-9 h-9 object-contain rounded-lg border border-slate-700 bg-slate-900 group-hover:border-sky-500 transition-colors"
+            alt="A C Logística Integral"
+            className="w-9 h-9 object-contain rounded-lg border border-slate-700 bg-slate-900 group-hover:border-sky-500 transition-colors shrink-0"
             onError={e => {
               (e.target as HTMLElement).style.display = 'none';
             }}
           />
           <div className="flex flex-col">
-            <span className="font-extrabold text-base tracking-tight text-white whitespace-nowrap leading-tight">
-              Adrian C Logística Integral
+            <span className="font-extrabold text-sm sm:text-base tracking-tight text-white whitespace-nowrap leading-tight">
+              A C Logística Integral
             </span>
-            <span className="text-[10px] text-sky-400 font-semibold tracking-wider uppercase">
+            <span className="text-[10px] text-sky-400 font-semibold tracking-wider uppercase leading-none mt-0.5">
               Viajes y Transporte
             </span>
           </div>
         </div>
 
         {/* Zone 2: Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 overflow-x-auto no-scrollbar py-1">
           {navItems.map(item => {
             const isActive = currentTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => setCurrentTab(item.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors flex items-center gap-1.5 ${
+                className={`px-2 py-1.5 2xl:px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-sky-500 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white hover:bg-slate-900'
                 }`}
               >
-                <item.icon className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
+                <item.icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden 2xl:inline">{item.fullLabel || item.label}</span>
+                <span className="2xl:hidden">{item.label}</span>
               </button>
             );
           })}
         </nav>
 
         {/* Zone 3: Primary Actions & Utility Controls */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Role badge */}
           {userRole === 'admin' && (
-            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-950/60 border border-sky-800 text-sky-300 text-xs font-semibold">
+            <div className="hidden 2xl:flex items-center gap-1 px-2 py-1 rounded-lg bg-sky-950/60 border border-sky-800 text-sky-300 text-xs font-semibold shrink-0">
               <Shield className="w-3.5 h-3.5 text-sky-400" />
               <span>Admin</span>
             </div>
           )}
 
           {userRole === 'driver' && authenticatedDriver && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-semibold shrink-0">
               <Truck className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="truncate max-w-[120px]">{authenticatedDriver.fullName}</span>
+              <span className="truncate max-w-[100px] xl:max-w-[120px]">{authenticatedDriver.fullName}</span>
+            </div>
+          )}
+
+          {userRole === 'provider' && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-950/60 border border-amber-800 text-amber-300 text-xs font-semibold shrink-0">
+              <Building2 className="w-3.5 h-3.5 text-amber-400" />
+              <span className="truncate max-w-[90px] xl:max-w-[120px]">
+                {currentProvider?.businessName || 'Proveedor'}
+              </span>
             </div>
           )}
 
           {/* Quick Tracking Portal button */}
           <button
             onClick={() => setCurrentTab('tracking')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 ${
+            title="Rastreo Público de Envíos"
+            className={`px-2 py-1.5 xl:px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 ${
               currentTab === 'tracking'
                 ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
                 : 'bg-slate-900 border border-slate-700 text-sky-300 hover:text-white hover:border-sky-500'
             }`}
           >
             <Search className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Rastreo Público</span>
+            <span className="hidden xl:inline">Rastreo</span>
+          </button>
+
+          {/* Driver Conduct Public Button "¿Cómo manejo?" */}
+          <button
+            onClick={() => setReportModalOpen(true)}
+            title="Reportar o calificar la conducción de un móvil"
+            className="px-2 py-1.5 xl:px-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:border-amber-500 text-amber-300 hover:text-white text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden xl:inline">¿Cómo manejo?</span>
           </button>
 
           {/* Driver Mode switch (only for admin or when logged in) */}
           {userRole === 'admin' && (
             <button
               onClick={() => setCurrentTab('driver-app')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 ${
+              title="Cambiar a Modo Chofer"
+              className={`px-2 py-1.5 xl:px-2.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 ${
                 currentTab === 'driver-app'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                   : 'bg-slate-900 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-950/40'
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Modo Chofer</span>
+              <span className="hidden 2xl:inline">Chofer</span>
             </button>
           )}
 
-          {/* Reset System Button (Admin only) */}
+          {/* Reset System Button (Admin only) - Compact Icon */}
           {userRole === 'admin' && (
             <button
               onClick={() => setResetModalOpen(true)}
               title="Reiniciar sistema sin datos (A cero)"
-              className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-rose-500/60 text-slate-400 hover:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="p-2 rounded-lg bg-slate-900 border border-slate-700 hover:border-rose-500/60 text-slate-400 hover:text-rose-400 transition-colors shrink-0 cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-              <span className="hidden xl:inline">Reiniciar Sin Datos</span>
             </button>
           )}
 
@@ -160,10 +195,10 @@ export const NavigationHeader: React.FC = () => {
           <button
             onClick={logout}
             title="Cerrar sesión y volver a la pantalla de acceso"
-            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-900 border border-rose-900/50 hover:border-rose-500 text-rose-400 hover:text-rose-300 transition-colors text-xs font-semibold flex items-center gap-1"
+            className="px-2 py-1.5 xl:px-2.5 rounded-lg bg-slate-900 border border-rose-900/50 hover:border-rose-500 text-rose-400 hover:text-rose-300 transition-colors text-xs font-semibold flex items-center gap-1 shrink-0"
           >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden md:inline">Salir</span>
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden xl:inline">Salir</span>
           </button>
 
           {/* Notification Center Bell */}
@@ -277,23 +312,33 @@ export const NavigationHeader: React.FC = () => {
               <span>{item.label}</span>
             </button>
           ))}
-          <div className="pt-2 border-t border-slate-800 flex gap-2">
+          <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2">
             <button
               onClick={() => {
                 setCurrentTab('tracking');
                 setMobileMenuOpen(false);
               }}
-              className="flex-1 py-2 bg-slate-900 border border-slate-700 text-sky-400 text-xs font-bold rounded-xl flex items-center justify-center gap-1"
+              className="py-2 bg-slate-900 border border-slate-700 text-sky-400 text-xs font-bold rounded-xl flex items-center justify-center gap-1"
             >
               <Search className="w-3.5 h-3.5" />
               <span>Rastreo Público</span>
             </button>
             <button
               onClick={() => {
+                setReportModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="py-2 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl flex items-center justify-center gap-1"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+              <span>¿Cómo manejo?</span>
+            </button>
+            <button
+              onClick={() => {
                 setCurrentTab('driver-app');
                 setMobileMenuOpen(false);
               }}
-              className="flex-1 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1"
+              className="col-span-2 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1"
             >
               <Smartphone className="w-3.5 h-3.5" />
               <span>Modo Chofer</span>
@@ -319,6 +364,12 @@ export const NavigationHeader: React.FC = () => {
       <ResetSystemConfirmModal
         isOpen={resetModalOpen}
         onClose={() => setResetModalOpen(false)}
+      />
+
+      {/* Driver Citizen Report Modal */}
+      <DriverReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
       />
     </header>
   );

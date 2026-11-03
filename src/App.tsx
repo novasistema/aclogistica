@@ -12,6 +12,8 @@ import { RouteSheetsView } from './components/RouteSheetsView';
 import { PackagesRemitosView } from './components/PackagesRemitosView';
 import { MaintenanceFleetView } from './components/MaintenanceFleetView';
 import { DriversManagementView } from './components/DriversManagementView';
+import { ProvidersManagementView } from './components/ProvidersManagementView';
+import { ProviderPortalView } from './components/ProviderPortalView';
 import { PublicTrackingView } from './components/PublicTrackingView';
 import { DriverAppView } from './components/DriverAppView';
 import { RemitoDocumentModal } from './components/RemitoDocumentModal';
@@ -42,7 +44,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-full bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+    <div className="min-h-full bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-sky-500 selection:text-white overflow-x-hidden w-full">
       {/* Top Navigation */}
       <NavigationHeader />
 
@@ -50,12 +52,15 @@ const AppContent: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {userRole === 'driver' ? (
           <DriverAppView />
+        ) : userRole === 'provider' ? (
+          <ProviderPortalView />
         ) : (
           <>
             {currentTab === 'dashboard' && <GeneralDashboardView />}
             {currentTab === 'fleet' && <FleetManagementView />}
             {currentTab === 'routes' && <RouteSheetsView />}
             {currentTab === 'packages' && <PackagesRemitosView />}
+            {currentTab === 'providers' && <ProvidersManagementView />}
             {currentTab === 'maintenance' && <MaintenanceFleetView />}
             {currentTab === 'drivers' && <DriversManagementView />}
             {currentTab === 'tracking' && <PublicTrackingView />}
@@ -90,14 +95,14 @@ const AppContent: React.FC = () => {
           <div className="flex items-center gap-3">
             <img
               src="/assets/aistudio/image_d9acb0e9.png"
-              alt="Adrian C Logística Integral"
+              alt="A C Logística Integral"
               className="w-7 h-7 object-contain rounded"
               onError={e => {
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
             <div>
-              <p className="font-bold text-slate-200">Adrian C Logística Integral</p>
+              <p className="font-bold text-slate-200">A C Logística Integral</p>
               <p className="text-[11px] text-slate-500">Viajes y transporte nacional · Base Operativa Central</p>
             </div>
           </div>
@@ -118,7 +123,7 @@ const AppContent: React.FC = () => {
           </div>
 
           <div className="text-[11px] text-slate-500 font-mono">
-            &copy; 2026 Adrian C Logística Integral. Todos los derechos reservados.
+            &copy; 2026 A C Logística Integral. Todos los derechos reservados.
           </div>
         </div>
       </footer>

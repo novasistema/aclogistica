@@ -61,5 +61,23 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isValidId(notificationId);
     }
+
+    // Proveedores registrados
+    match /providers/{providerId} {
+      allow read: if true;
+      allow write: if isValidId(providerId);
+    }
+
+    // Solicitudes de retiro de mercadería
+    match /pickup_requests/{requestId} {
+      allow read: if true;
+      allow write: if isValidId(requestId);
+    }
+
+    // Reportes de manejo y penalizaciones a choferes
+    match /driver_reports/{reportId} {
+      allow read: if true;
+      allow write: if isValidId(reportId);
+    }
   }
 }

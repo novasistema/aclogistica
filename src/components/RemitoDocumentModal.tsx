@@ -65,7 +65,7 @@ export const RemitoDocumentModal: React.FC<RemitoDocumentModalProps> = ({
               <div className="flex items-center gap-3">
                 <img
                   src="/assets/aistudio/image_d9acb0e9.png"
-                  alt="Adrian C Logística Integral"
+                  alt="A C Logística Integral"
                   className="w-14 h-14 object-contain rounded-lg"
                   onError={e => {
                     (e.target as HTMLElement).style.display = 'none';
@@ -73,10 +73,10 @@ export const RemitoDocumentModal: React.FC<RemitoDocumentModalProps> = ({
                 />
                 <div>
                   <h1 className="text-xl font-black tracking-tight text-slate-950 uppercase">
-                    Adrian C Logística Integral
+                    A C Logística Integral
                   </h1>
                   <p className="text-xs font-semibold text-slate-600">
-                    A C Logística Integral · Viajes y Transporte Interprovincial
+                    Viajes y Transporte Interprovincial
                   </p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     Base Operativa Central · CUIT: 30-71829401-2 · Tel: +54 9 341 582-9901

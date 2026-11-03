@@ -1,4 +1,14 @@
-import { Vehicle, Driver, RouteSheet, PackageRemito, MaintenanceRecord, PushNotification } from '../types';
+import {
+  Vehicle,
+  Driver,
+  RouteSheet,
+  PackageRemito,
+  MaintenanceRecord,
+  PushNotification,
+  Provider,
+  PickupRequest,
+  DriverReport,
+} from '../types';
 
 export const INITIAL_VEHICLES: Vehicle[] = [
   {
@@ -115,6 +125,9 @@ export const INITIAL_DRIVERS: Driver[] = [
     status: 'En Viaje',
     currentVehicleId: 'veh-01',
     rating: 5.0,
+    drivingScore: 100,
+    penaltyPoints: 0,
+    activeReportsCount: 0,
     totalDeliveries: 1420,
     emergencyContact: 'Silvia Rossi (Esposa) - +54 9 341 411-2233',
     password: 'adrian2026',
@@ -131,6 +144,9 @@ export const INITIAL_DRIVERS: Driver[] = [
     status: 'En Viaje',
     currentVehicleId: 'veh-03',
     rating: 4.85,
+    drivingScore: 92,
+    penaltyPoints: 8,
+    activeReportsCount: 1,
     totalDeliveries: 890,
     emergencyContact: 'Marta Fernandez - +54 9 11 3456-7890',
     password: 'carlos2026',
@@ -147,6 +163,9 @@ export const INITIAL_DRIVERS: Driver[] = [
     status: 'En Viaje',
     currentVehicleId: 'veh-02',
     rating: 4.92,
+    drivingScore: 96,
+    penaltyPoints: 4,
+    activeReportsCount: 0,
     totalDeliveries: 1250,
     emergencyContact: 'Laura Gutierrez - +54 9 351 888-2121',
     password: 'marcelo2026',
@@ -163,6 +182,9 @@ export const INITIAL_DRIVERS: Driver[] = [
     status: 'Disponible',
     currentVehicleId: 'veh-04',
     rating: 4.98,
+    drivingScore: 100,
+    penaltyPoints: 0,
+    activeReportsCount: 0,
     totalDeliveries: 460,
     emergencyContact: 'Esteban Fernandez - +54 9 341 999-0011',
     password: 'lucia2026',
@@ -179,6 +201,9 @@ export const INITIAL_DRIVERS: Driver[] = [
     status: 'Descanso',
     currentVehicleId: undefined,
     rating: 4.8,
+    drivingScore: 88,
+    penaltyPoints: 12,
+    activeReportsCount: 1,
     totalDeliveries: 980,
     emergencyContact: 'Andrea Benitez - +54 9 342 666-3322',
     password: 'roberto2026',
@@ -632,3 +657,184 @@ export const INITIAL_NOTIFICATIONS: PushNotification[] = [
     channel: 'In-App'
   }
 ];
+
+export const INITIAL_PROVIDERS: Provider[] = [
+  {
+    id: 'prov-01',
+    businessName: 'Distribuidora Mayorista Litoral S.A.',
+    cuit: '30-71458920-4',
+    contactPerson: 'Esteban Martinez',
+    phone: '+54 9 341 555-8899',
+    email: 'logistica@distribuidoralitoral.com.ar',
+    pickupAddress: 'Av. Ovidio Lagos 5200',
+    pickupCity: 'Rosario, Santa Fe',
+    category: 'Alimentos y Bebidas No Perecederas',
+    username: 'litoral',
+    password: 'proveedor123',
+    status: 'Activo',
+    createdAt: '2026-01-15',
+    totalPickupsRequested: 18,
+    notes: 'Depósito con rampa de carga para camiones chasis y zorra hidráulica.'
+  },
+  {
+    id: 'prov-02',
+    businessName: 'ElectroHogar Rosario S.R.L.',
+    cuit: '33-68924150-9',
+    contactPerson: 'Valeria Gomez',
+    phone: '+54 9 341 420-1122',
+    email: 'despacho@electrohogar-rosario.com',
+    pickupAddress: 'San Martín 1840',
+    pickupCity: 'Rosario, Santa Fe',
+    category: 'Electrodomésticos y Línea Blanca',
+    username: 'electrohogar',
+    password: 'proveedor123',
+    status: 'Activo',
+    createdAt: '2026-02-10',
+    totalPickupsRequested: 12,
+    notes: 'Mercadería frágil. Requiere manipulación con frazadas y fajas de sujeción.'
+  },
+  {
+    id: 'prov-03',
+    businessName: 'Repuestos & Rodamientos Santa Fe',
+    cuit: '30-65489123-2',
+    contactPerson: 'Gonzalo Rossi',
+    phone: '+54 9 342 458-7711',
+    email: 'contacto@repuestos-santafe.com',
+    pickupAddress: 'Facundo Zuviría 4120',
+    pickupCity: 'Santa Fe Capital',
+    category: 'Autopartes y Ferretería Industrial',
+    username: 'repuestos',
+    password: 'proveedor123',
+    status: 'Activo',
+    createdAt: '2026-03-01',
+    totalPickupsRequested: 8,
+    notes: 'Bultos pesados en cajas de madera y pallets.'
+  }
+];
+
+export const INITIAL_PICKUP_REQUESTS: PickupRequest[] = [
+  {
+    id: 'sol-01',
+    requestNumber: 'SOL-2026-0042',
+    providerId: 'prov-01',
+    providerName: 'Distribuidora Mayorista Litoral S.A.',
+    providerPhone: '+54 9 341 555-8899',
+    pickupAddress: 'Av. Ovidio Lagos 5200',
+    pickupCity: 'Rosario, Santa Fe',
+    requestedDate: '2026-11-03',
+    requestedTimeSlot: '09:00 a 12:30 hs',
+    items: [
+      {
+        id: 'dim-01',
+        lengthCm: 60,
+        widthCm: 40,
+        heightCm: 50,
+        weightKg: 25,
+        quantity: 8,
+        description: 'Cajas de conservas y aceites especiales'
+      },
+      {
+        id: 'dim-02',
+        lengthCm: 80,
+        widthCm: 60,
+        heightCm: 70,
+        weightKg: 45,
+        quantity: 4,
+        description: 'Bultos embalados con film strech de café importado'
+      }
+    ],
+    totalPackages: 12,
+    totalWeightKg: 380,
+    totalVolumeM3: 2.26,
+    cargoDescription: '12 bultos de mercadería alimenticia seca para redistribución a Córdoba.',
+    specialInstructions: 'Ingresar por portón 2 lateral de carga pesada.',
+    status: 'Pendiente',
+    createdAt: '2026-11-03 07:15 hs'
+  },
+  {
+    id: 'sol-02',
+    requestNumber: 'SOL-2026-0041',
+    providerId: 'prov-02',
+    providerName: 'ElectroHogar Rosario S.R.L.',
+    providerPhone: '+54 9 341 420-1122',
+    pickupAddress: 'San Martín 1840',
+    pickupCity: 'Rosario, Santa Fe',
+    requestedDate: '2026-11-03',
+    requestedTimeSlot: '14:00 a 17:00 hs',
+    items: [
+      {
+        id: 'dim-03',
+        lengthCm: 70,
+        widthCm: 65,
+        heightCm: 175,
+        weightKg: 68,
+        quantity: 2,
+        description: 'Heladeras No Frost embalaje original de fábrica'
+      },
+      {
+        id: 'dim-04',
+        lengthCm: 60,
+        widthCm: 60,
+        heightCm: 85,
+        weightKg: 55,
+        quantity: 3,
+        description: 'Lavarropas automáticos carga frontal'
+      }
+    ],
+    totalPackages: 5,
+    totalWeightKg: 301,
+    totalVolumeM3: 2.51,
+    cargoDescription: 'Electrodomésticos de línea blanca para entrega interjurisdiccional.',
+    specialInstructions: 'Transportar de pie, no apilar más de una unidad.',
+    status: 'Chofer Asignado',
+    assignedDriverId: 'drv-02',
+    assignedDriverName: 'Carlos Mendez',
+    assignedVehicleId: 'veh-03',
+    assignedVehiclePlate: 'AD 732 KL',
+    createdAt: '2026-11-02 16:30 hs'
+  }
+];
+
+export const INITIAL_DRIVER_REPORTS: DriverReport[] = [
+  {
+    id: 'rep-01',
+    reportNumber: 'REP-2026-0012',
+    plateOrVehicleNumber: 'AD 732 KL',
+    vehicleId: 'veh-03',
+    driverId: 'drv-02',
+    driverName: 'Carlos Mendez',
+    reportType: 'Exceso de Velocidad',
+    incidentDate: '2026-11-02',
+    incidentTime: '15:20 hs',
+    incidentLocation: 'Av. Pellegrini y Corrientes, Rosario',
+    description: 'El furgón circulaba a excesiva velocidad sobre carril exclusivo y cruzó con semáforo cambiando a rojo.',
+    severity: 'Media',
+    penaltyPoints: 8,
+    status: 'Verificado / Penalizado',
+    reportedBy: 'Ignacio V. (Automovilista)',
+    contactPhone: '+54 9 341 444-1188',
+    adminResolutionNotes: 'Revisada la telemetría GPS que constató velocidad de 64 km/h en zona urbana de 50 km/h. Se aplicó sanción de 8 puntos al score del chofer.',
+    createdAt: '2026-11-02 15:45 hs'
+  },
+  {
+    id: 'rep-02',
+    reportNumber: 'REP-2026-0013',
+    plateOrVehicleNumber: 'AF 892 CD',
+    vehicleId: 'veh-01',
+    driverId: 'drv-01',
+    driverName: 'Adrian C.',
+    reportType: 'Conducción Ejemplar / Felicitación',
+    incidentDate: '2026-11-02',
+    incidentTime: '18:10 hs',
+    incidentLocation: 'RN 9 cerca del peaje Carcarañá',
+    description: 'Excelente conducta en ruta, cedió el paso correctamente con balizas y facilitó el sobrepaso con suma prudencia.',
+    severity: 'Positiva',
+    penaltyPoints: 0,
+    status: 'Verificado / Penalizado',
+    reportedBy: 'Laura M. (Conductora particular)',
+    contactPhone: '+54 9 341 512-3344',
+    adminResolutionNotes: 'Reporte positivo asentado en el legajo del chofer.',
+    createdAt: '2026-11-02 19:00 hs'
+  }
+];
+

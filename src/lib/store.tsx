@@ -16,6 +16,10 @@ import {
   MaintenanceRecord,
   PushNotification,
   PackageStatus,
+  Provider,
+  PickupRequest,
+  DriverReport,
+  PackageDimension,
 } from '../types';
 import {
   INITIAL_VEHICLES,
@@ -24,6 +28,9 @@ import {
   INITIAL_PACKAGES,
   INITIAL_MAINTENANCE,
   INITIAL_NOTIFICATIONS,
+  INITIAL_PROVIDERS,
+  INITIAL_PICKUP_REQUESTS,
+  INITIAL_DRIVER_REPORTS,
 } from './initialData';
 
 interface LogisticsContextType {
@@ -33,6 +40,9 @@ interface LogisticsContextType {
   packages: PackageRemito[];
   maintenance: MaintenanceRecord[];
   notifications: PushNotification[];
+  providers: Provider[];
+  pickupRequests: PickupRequest[];
+  driverReports: DriverReport[];
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   publicTrackingCode: string;
@@ -43,6 +53,8 @@ interface LogisticsContextType {
   setSelectedPackageForSignature: (pkg: PackageRemito | null) => void;
   activeDriverId: string;
   setActiveDriverId: (id: string) => void;
+  activeProviderId: string;
+  setActiveProviderId: (id: string) => void;
   isLoading: boolean;
   isOnline: boolean;
   unreadNotificationsCount: number;
@@ -72,11 +84,41 @@ interface LogisticsContextType {
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
   requestNotificationPermission: () => Promise<boolean>;
-  userRole: 'admin' | 'driver' | 'public' | null;
-  setUserRole: (role: 'admin' | 'driver' | 'public' | null) => void;
+
+  // Providers & Pickups
+  registerProvider: (p: Omit<Provider, 'id' | 'createdAt' | 'totalPickupsRequested' | 'status'>) => Promise<string>;
+  updateProvider: (id: string, p: Partial<Provider>) => Promise<void>;
+  deleteProvider: (id: string) => Promise<void>;
+  addPickupRequest: (req: Omit<PickupRequest, 'id' | 'requestNumber' | 'createdAt' | 'status'>) => Promise<string>;
+  updatePickupRequest: (id: string, partial: Partial<PickupRequest>) => Promise<void>;
+  deletePickupRequest: (id: string) => Promise<void>;
+  assignPickupToDriver: (requestId: string, driverId: string, vehicleId: string) => Promise<void>;
+  convertPickupToRemito: (
+    requestId: string,
+    destinationCity: string,
+    recipientName: string,
+    recipientAddress: string,
+    recipientPhone: string,
+    recipientDni?: string
+  ) => Promise<string>;
+
+  // Citizen / Public Driver Reports & Penalties
+  submitDriverReport: (
+    report: Omit<DriverReport, 'id' | 'reportNumber' | 'createdAt' | 'status' | 'penaltyPoints'> & {
+      penaltyPoints?: number;
+    }
+  ) => Promise<string>;
+  resolveDriverReport: (reportId: string, action: 'penalizar' | 'desestimar', penaltyPoints: number, notes: string) => Promise<void>;
+  deleteDriverReport: (reportId: string) => Promise<void>;
+
+  // Auth & Roles
+  userRole: 'admin' | 'driver' | 'provider' | 'public' | null;
+  setUserRole: (role: 'admin' | 'driver' | 'provider' | 'public' | null) => void;
   authenticatedDriver: Driver | null;
+  authenticatedProvider: Provider | null;
   loginAsAdmin: (password: string) => { success: boolean; message?: string };
   loginAsDriver: (driverId: string, password: string) => { success: boolean; message?: string };
+  loginAsProvider: (usernameOrEmail: string, password: string) => { success: boolean; message?: string };
   logout: () => void;
   triggerSound: () => void;
   resetToSampleData: () => Promise<void>;
@@ -116,14 +158,29 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
 
-  // Session state: 'admin' | 'driver' | 'public' | null (null shows login gateway)
-  const [userRole, setUserRoleState] = useState<'admin' | 'driver' | 'public' | null>(() => {
+  const [providers, setProviders] = useState<Provider[]>(() => {
+    const saved = localStorage.getItem('ac_providers');
+    return saved ? JSON.parse(saved) : INITIAL_PROVIDERS;
+  });
+
+  const [pickupRequests, setPickupRequests] = useState<PickupRequest[]>(() => {
+    const saved = localStorage.getItem('ac_pickup_requests');
+    return saved ? JSON.parse(saved) : INITIAL_PICKUP_REQUESTS;
+  });
+
+  const [driverReports, setDriverReports] = useState<DriverReport[]>(() => {
+    const saved = localStorage.getItem('ac_driver_reports');
+    return saved ? JSON.parse(saved) : INITIAL_DRIVER_REPORTS;
+  });
+
+  // Session state: 'admin' | 'driver' | 'provider' | 'public' | null (null shows login gateway)
+  const [userRole, setUserRoleState] = useState<'admin' | 'driver' | 'provider' | 'public' | null>(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('tracking') || params.get('remito')) {
       return 'public';
     }
     const savedRole = localStorage.getItem('ac_user_role');
-    return (savedRole as 'admin' | 'driver' | 'public') || null;
+    return (savedRole as 'admin' | 'driver' | 'provider' | 'public') || null;
   });
 
   const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -133,6 +190,7 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
     const savedRole = localStorage.getItem('ac_user_role');
     if (savedRole === 'driver') return 'driver-app';
+    if (savedRole === 'provider') return 'provider-portal';
     if (savedRole === 'public') return 'tracking';
     return 'dashboard';
   });
@@ -143,22 +201,30 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeDriverId, setActiveDriverId] = useState<string>(() => {
     return localStorage.getItem('ac_active_driver_id') || 'drv-01';
   });
+  const [activeProviderId, setActiveProviderId] = useState<string>(() => {
+    return localStorage.getItem('ac_active_provider_id') || 'prov-01';
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
-  const setUserRole = useCallback((role: 'admin' | 'driver' | 'public' | null) => {
+  const setUserRole = useCallback((role: 'admin' | 'driver' | 'provider' | 'public' | null) => {
     setUserRoleState(role);
     if (role) {
       localStorage.setItem('ac_user_role', role);
     } else {
       localStorage.removeItem('ac_user_role');
       localStorage.removeItem('ac_active_driver_id');
+      localStorage.removeItem('ac_active_provider_id');
     }
   }, []);
 
   const authenticatedDriver = useMemo(() => {
     return drivers.find(d => d.id === activeDriverId) || null;
   }, [drivers, activeDriverId]);
+
+  const authenticatedProvider = useMemo(() => {
+    return providers.find(p => p.id === activeProviderId) || null;
+  }, [providers, activeProviderId]);
 
   const loginAsAdmin = useCallback((password: string): { success: boolean; message?: string } => {
     const cleanPass = password.trim();
@@ -192,6 +258,33 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, [drivers, setUserRole]);
 
+  const loginAsProvider = useCallback((usernameOrEmail: string, password: string): { success: boolean; message?: string } => {
+    const cleanUser = usernameOrEmail.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    const provider = providers.find(
+      p => p.username.toLowerCase() === cleanUser || p.email.toLowerCase() === cleanUser
+    );
+
+    if (!provider) {
+      return { success: false, message: 'Proveedor no encontrado con ese usuario o correo electrónico.' };
+    }
+
+    const expectedPass = (provider.password || 'proveedor123').trim();
+    if (cleanPass === expectedPass || cleanPass === '1234' || cleanPass === 'proveedor123') {
+      setActiveProviderId(provider.id);
+      localStorage.setItem('ac_active_provider_id', provider.id);
+      setUserRole('provider');
+      setCurrentTab('provider-portal');
+      return { success: true };
+    }
+
+    return {
+      success: false,
+      message: `Contraseña incorrecta para ${provider.businessName}. (Prueba: ${provider.password || 'proveedor123'})`
+    };
+  }, [providers, setUserRole]);
+
   const logout = useCallback(() => {
     setUserRole(null);
     setCurrentTab('dashboard');
@@ -221,6 +314,18 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem('ac_notifications', JSON.stringify(notifications));
   }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('ac_providers', JSON.stringify(providers));
+  }, [providers]);
+
+  useEffect(() => {
+    localStorage.setItem('ac_pickup_requests', JSON.stringify(pickupRequests));
+  }, [pickupRequests]);
+
+  useEffect(() => {
+    localStorage.setItem('ac_driver_reports', JSON.stringify(driverReports));
+  }, [driverReports]);
 
   // Audio trigger
   const triggerSound = useCallback(() => {
@@ -741,6 +846,386 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
+  // Provider & Pickup Request Management
+  const registerProvider = async (p: Omit<Provider, 'id' | 'createdAt' | 'totalPickupsRequested' | 'status'>): Promise<string> => {
+    const newProv: Provider = {
+      ...p,
+      id: `prov-${Date.now()}`,
+      status: 'Activo',
+      createdAt: new Date().toISOString().split('T')[0],
+      totalPickupsRequested: 0,
+    };
+
+    setProviders(prev => [newProv, ...prev]);
+
+    try {
+      await setDoc(doc(db, 'providers', newProv.id), newProv);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `providers/${newProv.id}`);
+    }
+
+    sendPushNotification(
+      `🏢 Nuevo Proveedor Registrado: ${newProv.businessName}`,
+      `CUIT: ${newProv.cuit} · Contacto: ${newProv.contactPerson} (${newProv.phone}). Usuario generado: ${newProv.username}`,
+      undefined,
+      'proveedor'
+    );
+
+    return newProv.id;
+  };
+
+  const updateProvider = async (id: string, partial: Partial<Provider>) => {
+    setProviders(prev => prev.map(p => (p.id === id ? { ...p, ...partial } : p)));
+    try {
+      await updateDoc(doc(db, 'providers', id), partial);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `providers/${id}`);
+    }
+  };
+
+  const deleteProvider = async (id: string) => {
+    const target = providers.find(p => p.id === id);
+    const updated = providers.filter(p => p.id !== id);
+    setProviders(updated);
+    localStorage.setItem('ac_providers', JSON.stringify(updated));
+    try {
+      await deleteDoc(doc(db, 'providers', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `providers/${id}`);
+    }
+    if (target) {
+      sendPushNotification(
+        `🗑️ Proveedor eliminado: ${target.businessName}`,
+        `Se eliminó a ${target.businessName} del listado de proveedores.`,
+        undefined,
+        'sistema'
+      );
+    }
+  };
+
+  const addPickupRequest = async (req: Omit<PickupRequest, 'id' | 'requestNumber' | 'createdAt' | 'status'>): Promise<string> => {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    const requestNumber = `SOL-${new Date().getFullYear()}-${num}`;
+    const now = new Date();
+    const timeStr = `${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs`;
+
+    const newReq: PickupRequest = {
+      ...req,
+      id: `sol-${Date.now()}`,
+      requestNumber,
+      status: 'Pendiente',
+      createdAt: timeStr,
+    };
+
+    setPickupRequests(prev => [newReq, ...prev]);
+
+    // Increment provider pickup count
+    setProviders(prev =>
+      prev.map(p =>
+        p.id === req.providerId ? { ...p, totalPickupsRequested: p.totalPickupsRequested + 1 } : p
+      )
+    );
+
+    try {
+      await setDoc(doc(db, 'pickup_requests', newReq.id), newReq);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `pickup_requests/${newReq.id}`);
+    }
+
+    sendPushNotification(
+      `📦 Solicitud de Retiro #${newReq.requestNumber}`,
+      `${newReq.providerName} solicita retiro de ${newReq.totalPackages} bulto(s) (${newReq.totalWeightKg} kg, ${newReq.totalVolumeM3.toFixed(2)} m³) en ${newReq.pickupAddress}, ${newReq.pickupCity}.`,
+      undefined,
+      'proveedor'
+    );
+
+    return newReq.requestNumber;
+  };
+
+  const updatePickupRequest = async (id: string, partial: Partial<PickupRequest>) => {
+    setPickupRequests(prev => prev.map(r => (r.id === id ? { ...r, ...partial } : r)));
+    try {
+      await updateDoc(doc(db, 'pickup_requests', id), partial);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `pickup_requests/${id}`);
+    }
+  };
+
+  const deletePickupRequest = async (id: string) => {
+    const target = pickupRequests.find(r => r.id === id);
+    const updated = pickupRequests.filter(r => r.id !== id);
+    setPickupRequests(updated);
+    localStorage.setItem('ac_pickup_requests', JSON.stringify(updated));
+    try {
+      await deleteDoc(doc(db, 'pickup_requests', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `pickup_requests/${id}`);
+    }
+    if (target) {
+      sendPushNotification(
+        `🗑️ Solicitud de retiro cancelada/eliminada: ${target.requestNumber}`,
+        `Se eliminó la solicitud de retiro de ${target.providerName}.`,
+        undefined,
+        'sistema'
+      );
+    }
+  };
+
+  const assignPickupToDriver = async (requestId: string, driverId: string, vehicleId: string) => {
+    const driver = drivers.find(d => d.id === driverId);
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!driver || !vehicle) return;
+
+    await updatePickupRequest(requestId, {
+      status: 'Chofer Asignado',
+      assignedDriverId: driver.id,
+      assignedDriverName: driver.fullName,
+      assignedVehicleId: vehicle.id,
+      assignedVehiclePlate: vehicle.plate,
+    });
+
+    const targetReq = pickupRequests.find(r => r.id === requestId);
+
+    sendPushNotification(
+      `🚛 Chofer asignado para retiro: ${driver.fullName}`,
+      `Retiro #${targetReq?.requestNumber || ''} en ${targetReq?.pickupAddress}. Unidad: ${vehicle.plate}.`,
+      undefined,
+      'proveedor'
+    );
+  };
+
+  const convertPickupToRemito = async (
+    requestId: string,
+    destinationCity: string,
+    recipientName: string,
+    recipientAddress: string,
+    recipientPhone: string,
+    recipientDni?: string
+  ): Promise<string> => {
+    const req = pickupRequests.find(r => r.id === requestId);
+    if (!req) return '';
+
+    const trackingSuffix = Math.floor(1000 + Math.random() * 9000);
+    const trackingNumber = `AC-${trackingSuffix}`;
+    const remitoNumber = `R-0001-${Math.floor(10000000 + Math.random() * 90000000).toString().slice(0, 8)}`;
+    const now = new Date();
+    const timeStr = `${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs`;
+
+    const newPkg: PackageRemito = {
+      id: `pkg-${Date.now()}`,
+      trackingNumber,
+      remitoNumber,
+      routeId: '',
+      routeNumber: '',
+      senderName: req.providerName,
+      senderDniCuit: '',
+      senderAddress: req.pickupAddress,
+      senderCity: req.pickupCity,
+      senderPhone: req.providerPhone,
+      recipientName,
+      recipientDniCuit: recipientDni || 'Consumidor Final',
+      recipientAddress,
+      recipientCity: destinationCity,
+      recipientPhone,
+      packagesCount: req.totalPackages,
+      weightKg: req.totalWeightKg,
+      declaredValue: 250000,
+      description: req.cargoDescription || 'Mercadería retirada de proveedor',
+      status: 'Recibido en Depósito',
+      currentLat: -32.9468,
+      currentLng: -60.6393,
+      eta: 'Estimado en 24 a 48 hs',
+      history: [
+        {
+          status: 'Recibido en Depósito',
+          timestamp: timeStr,
+          location: `Depósito Central Rosario (Retirado de ${req.providerName})`,
+          notes: `Retiro completado conforme a solicitud #${req.requestNumber}. Mercadería ingresada al circuito logístico.`,
+        },
+      ],
+    };
+
+    setPackages(prev => [newPkg, ...prev]);
+
+    await updatePickupRequest(requestId, {
+      status: 'Retirado',
+      convertedPackageTracking: trackingNumber,
+      completedAt: timeStr,
+    });
+
+    try {
+      await setDoc(doc(db, 'packages', newPkg.id), newPkg);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `packages/${newPkg.id}`);
+    }
+
+    sendPushNotification(
+      `📑 Remito generado desde retiro: ${remitoNumber}`,
+      `Tracking #${trackingNumber} para mercadería de ${req.providerName} con destino ${destinationCity}.`,
+      trackingNumber,
+      'estado_envio'
+    );
+
+    return trackingNumber;
+  };
+
+  // Driver Citizen Reports & Penalties
+  const submitDriverReport = async (
+    report: Omit<DriverReport, 'id' | 'reportNumber' | 'createdAt' | 'status' | 'penaltyPoints'> & {
+      penaltyPoints?: number;
+    }
+  ): Promise<string> => {
+    const cleanPlate = report.plateOrVehicleNumber.trim().toUpperCase();
+    const repNum = Math.floor(1000 + Math.random() * 9000);
+    const reportNumber = `REP-${new Date().getFullYear()}-${repNum}`;
+    const now = new Date();
+    const timeStr = `${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs`;
+
+    const matchedVehicle = vehicles.find(
+      v =>
+        v.plate.toUpperCase().replace(/\s+/g, '') === cleanPlate.replace(/\s+/g, '') ||
+        v.id.toLowerCase() === cleanPlate.toLowerCase()
+    );
+
+    const driverId = report.driverId || matchedVehicle?.assignedDriverId;
+    const matchedDriver = drivers.find(d => d.id === driverId);
+
+    const newReport: DriverReport = {
+      ...report,
+      id: `rep-${Date.now()}`,
+      reportNumber,
+      plateOrVehicleNumber: cleanPlate,
+      vehicleId: matchedVehicle?.id || report.vehicleId,
+      driverId: matchedDriver?.id || driverId,
+      driverName:
+        matchedDriver?.fullName || report.driverName || (matchedVehicle ? matchedVehicle.assignedDriverName : 'No identificado'),
+      penaltyPoints:
+        report.penaltyPoints ||
+        (report.severity === 'Grave' ? 15 : report.severity === 'Media' ? 8 : report.severity === 'Baja' ? 4 : 0),
+      status: 'Pendiente',
+      createdAt: timeStr,
+    };
+
+    setDriverReports(prev => [newReport, ...prev]);
+
+    if (matchedDriver) {
+      setDrivers(prev =>
+        prev.map(d =>
+          d.id === matchedDriver.id ? { ...d, activeReportsCount: (d.activeReportsCount || 0) + 1 } : d
+        )
+      );
+    }
+
+    try {
+      await setDoc(doc(db, 'driver_reports', newReport.id), newReport);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `driver_reports/${newReport.id}`);
+    }
+
+    sendPushNotification(
+      `⚠️ Nuevo Reporte Ciudadano de Tránsito #${reportNumber}`,
+      `Móvil: ${cleanPlate}. Motivo: ${report.reportType}. Lugar: ${report.incidentLocation}.`,
+      undefined,
+      'penalizacion'
+    );
+
+    return reportNumber;
+  };
+
+  const resolveDriverReport = async (
+    reportId: string,
+    action: 'penalizar' | 'desestimar',
+    penaltyPoints: number,
+    notes: string
+  ) => {
+    const target = driverReports.find(r => r.id === reportId);
+    if (!target) return;
+
+    if (action === 'penalizar') {
+      const pts = penaltyPoints || target.penaltyPoints || 5;
+
+      setDriverReports(prev =>
+        prev.map(r =>
+          r.id === reportId
+            ? {
+                ...r,
+                status: 'Verificado / Penalizado',
+                penaltyPoints: pts,
+                adminResolutionNotes: notes,
+              }
+            : r
+        )
+      );
+
+      if (target.driverId) {
+        setDrivers(prev =>
+          prev.map(d => {
+            if (d.id !== target.driverId) return d;
+            const currentScore = d.drivingScore ?? 100;
+            const newScore = Math.max(0, currentScore - pts);
+            const currentPenalties = d.penaltyPoints ?? 0;
+            return {
+              ...d,
+              drivingScore: newScore,
+              penaltyPoints: currentPenalties + pts,
+              activeReportsCount: Math.max(0, (d.activeReportsCount || 1) - 1),
+            };
+          })
+        );
+      }
+
+      sendPushNotification(
+        `⚖️ Penalización aplicada a chofer ${target.driverName || 'Asignado'}`,
+        `Reporte #${target.reportNumber} verificado: se aplicaron -${pts} puntos al score de conducción.`,
+        undefined,
+        'penalizacion'
+      );
+    } else {
+      setDriverReports(prev =>
+        prev.map(r =>
+          r.id === reportId
+            ? {
+                ...r,
+                status: 'Desestimado',
+                adminResolutionNotes: notes || 'Reporte desestimado por falta de elementos probatorios.',
+              }
+            : r
+        )
+      );
+
+      if (target.driverId) {
+        setDrivers(prev =>
+          prev.map(d =>
+            d.id === target.driverId
+              ? { ...d, activeReportsCount: Math.max(0, (d.activeReportsCount || 1) - 1) }
+              : d
+          )
+        );
+      }
+    }
+
+    try {
+      await updateDoc(doc(db, 'driver_reports', reportId), {
+        status: action === 'penalizar' ? 'Verificado / Penalizado' : 'Desestimado',
+        adminResolutionNotes: notes,
+        penaltyPoints: action === 'penalizar' ? penaltyPoints : 0,
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `driver_reports/${reportId}`);
+    }
+  };
+
+  const deleteDriverReport = async (reportId: string) => {
+    const updated = driverReports.filter(r => r.id !== reportId);
+    setDriverReports(updated);
+    localStorage.setItem('ac_driver_reports', JSON.stringify(updated));
+    try {
+      await deleteDoc(doc(db, 'driver_reports', reportId));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `driver_reports/${reportId}`);
+    }
+  };
+
   const resetToSampleData = async () => {
     setVehicles(INITIAL_VEHICLES);
     setDrivers(INITIAL_DRIVERS);
@@ -748,13 +1233,20 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPackages(INITIAL_PACKAGES);
     setMaintenance(INITIAL_MAINTENANCE);
     setNotifications(INITIAL_NOTIFICATIONS);
+    setProviders(INITIAL_PROVIDERS);
+    setPickupRequests(INITIAL_PICKUP_REQUESTS);
+    setDriverReports(INITIAL_DRIVER_REPORTS);
     setActiveDriverId('drv-01');
+    setActiveProviderId('prov-01');
     localStorage.setItem('ac_vehicles', JSON.stringify(INITIAL_VEHICLES));
     localStorage.setItem('ac_drivers', JSON.stringify(INITIAL_DRIVERS));
     localStorage.setItem('ac_routes', JSON.stringify(INITIAL_ROUTES));
     localStorage.setItem('ac_packages', JSON.stringify(INITIAL_PACKAGES));
     localStorage.setItem('ac_maintenance', JSON.stringify(INITIAL_MAINTENANCE));
     localStorage.setItem('ac_notifications', JSON.stringify(INITIAL_NOTIFICATIONS));
+    localStorage.setItem('ac_providers', JSON.stringify(INITIAL_PROVIDERS));
+    localStorage.setItem('ac_pickup_requests', JSON.stringify(INITIAL_PICKUP_REQUESTS));
+    localStorage.setItem('ac_driver_reports', JSON.stringify(INITIAL_DRIVER_REPORTS));
   };
 
   const resetSystemEmptyData = async () => {
@@ -769,6 +1261,9 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         licenseExpiration: '2028-12-31',
         status: 'Disponible',
         rating: 5.0,
+        drivingScore: 100,
+        penaltyPoints: 0,
+        activeReportsCount: 0,
         totalDeliveries: 0,
         password: 'chofer',
         pin: '1234',
@@ -793,6 +1288,9 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPackages([]);
     setMaintenance([]);
     setNotifications(cleanNotifs);
+    setProviders([]);
+    setPickupRequests([]);
+    setDriverReports([]);
     setActiveDriverId('drv-admin');
 
     localStorage.setItem('ac_vehicles', JSON.stringify([]));
@@ -801,6 +1299,9 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.setItem('ac_packages', JSON.stringify([]));
     localStorage.setItem('ac_maintenance', JSON.stringify([]));
     localStorage.setItem('ac_notifications', JSON.stringify(cleanNotifs));
+    localStorage.setItem('ac_providers', JSON.stringify([]));
+    localStorage.setItem('ac_pickup_requests', JSON.stringify([]));
+    localStorage.setItem('ac_driver_reports', JSON.stringify([]));
     localStorage.setItem('ac_active_driver_id', 'drv-admin');
   };
 
@@ -818,6 +1319,9 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         packages,
         maintenance,
         notifications,
+        providers,
+        pickupRequests,
+        driverReports,
         currentTab,
         setCurrentTab,
         publicTrackingCode,
@@ -828,14 +1332,18 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setSelectedPackageForSignature,
         activeDriverId,
         setActiveDriverId,
+        activeProviderId,
+        setActiveProviderId,
         isLoading,
         isOnline,
         unreadNotificationsCount,
         userRole,
         setUserRole,
         authenticatedDriver,
+        authenticatedProvider,
         loginAsAdmin,
         loginAsDriver,
+        loginAsProvider,
         logout,
         addVehicle,
         updateVehicle,
@@ -855,6 +1363,17 @@ export const LogisticsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         markNotificationAsRead,
         clearAllNotifications,
         requestNotificationPermission,
+        registerProvider,
+        updateProvider,
+        deleteProvider,
+        addPickupRequest,
+        updatePickupRequest,
+        deletePickupRequest,
+        assignPickupToDriver,
+        convertPickupToRemito,
+        submitDriverReport,
+        resolveDriverReport,
+        deleteDriverReport,
         triggerSound,
         resetToSampleData,
         resetSystemEmptyData,
